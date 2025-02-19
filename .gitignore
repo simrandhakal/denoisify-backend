@@ -1,0 +1,8 @@
+venv/
+lenv/
+photo_conversion/models/
+media/test_test_set/
+media/testing/
+# static/
+# docs/
+# media/
