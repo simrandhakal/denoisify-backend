@@ -116,7 +116,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kathmandu'
 
 USE_I18N = True
 
@@ -148,8 +148,8 @@ if not DEPLOYED:
     ]
     MEDIA_ROOT = BASE_DIR / 'media'
 else:
-    STATIC_ROOT = '/var/www/station/static/'
-    MEDIA_ROOT = '/var/www/station/media/'
+    STATIC_ROOT = '/var/www/html/static/'
+    MEDIA_ROOT = '/var/www/html/media/'
 
     # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True
@@ -160,7 +160,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 # ]
 
 CSRF_TRUSTED_ORIGINS = ['http://localhost:3000',
-                        'http://127.0.0.1:3000', 'https://fmnepalaakash.vercel.app']
+                        'http://127.0.0.1:3000',]
 # allow all csrf origins
 CSRF_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = False
