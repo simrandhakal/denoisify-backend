@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from .models import PhotoConversion
 from .serializers import ConversionInitiationSerializer, PhotoConversionDetailSerializer
-from .utils import initiate_conversion
+# from .utils import initiate_conversion
 from core.response import MyResponse
 from django.core.files.images import get_image_dimensions
 from django.contrib.auth.models import User
@@ -42,7 +42,7 @@ class ConversionInitiationView(APIView):
 
                 photo_conversion.resolution = f"{w}x{h}"
                 photo_conversion.save()
-                initiate_conversion(photo_conversion)
+                # initiate_conversion(photo_conversion)
                 serializer = PhotoConversionDetailSerializer(photo_conversion)
                 return MyResponse.success(data=serializer.data, message="Conversion initiated.", status_code=status.HTTP_200_OK)
 

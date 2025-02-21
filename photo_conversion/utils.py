@@ -1,6 +1,6 @@
-import cv2
-import numpy as np
-from skimage.color import rgb2lab, lab2rgb
+# import cv2
+# import numpy as np
+# from skimage.color import rgb2lab, lab2rgb
 # from keras.models import model_from_json
 import os
 from django.conf import settings
@@ -8,7 +8,7 @@ from pathlib import Path
 
 DEF_PATH = Path(__file__).resolve().parent
 
-from skimage.metrics import structural_similarity as ssim
+# from skimage.metrics import structural_similarity as ssim
 
 def calculate_mse_loss(clean_image, denoised_image):
     # MSE Loss
@@ -27,7 +27,7 @@ def calculate_accuracy(clean_image, denoised_image, tolerance=5):
 
 
 def model():
-    from tensorflow.keras.models import load_model
+    # from tensorflow.keras.models import load_model
     try:
         model = load_model(os.path.join(DEF_PATH, 'models', 'model.h5'))
         return model
@@ -36,7 +36,7 @@ def model():
         raise
 
 def convert(input_image_url, output_image_path, resolution=None):
-    from skimage.metrics import structural_similarity as ssim
+    # from skimage.metrics import structural_similarity as ssim
 
     try:
         # Load and preprocess the noisy input image
