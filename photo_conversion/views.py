@@ -58,6 +58,7 @@ class ConversionDetailView(RetrieveAPIView, APIView):
     # authentication_classes = [TokenAuthentication]
     serializer_class = PhotoConversionDetailSerializer
     queryset = PhotoConversion.objects.all()
+    lookup_field = 'reference_id'
 
     def get_queryset(self):
         return super().get_queryset().filter(user=User.objects.first())
