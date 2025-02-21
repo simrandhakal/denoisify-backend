@@ -1,5 +1,5 @@
 from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
@@ -10,20 +10,20 @@ from core.response import MyResponse
 from django.core.files.images import get_image_dimensions
 from django.contrib.auth.models import User
 
+
 class ConversionInitiationView(APIView):
     # permission_classes = [IsAuthenticated]
     # authentication_classes = [TokenAuthentication]
 
-
     def post(self, request, format=None):
         data = {**request.data}
-        user=User.objects.first()
+        user = User.objects.first()
         # user= request.user
         data = {
             "name": data["name"][0],
             "input_image": data["input_image"][0],
             "user": user,
-            
+
 
         }
         print(data)
@@ -53,29 +53,18 @@ class ConversionInitiationView(APIView):
         return MyResponse.failure(data=serializer.errors, message='Validation error', status_code=status.HTTP_400_BAD_REQUEST)
 
 
-class ConversionDetailView(APIView):
+class ConversionDetailView(RetrieveAPIView, APIView):
     # permission_classes = [IsAuthenticated]
     # authentication_classes = [TokenAuthentication]
+    serializer_class = PhotoConversionDetailSerializer
+    queryset = PhotoConversion.objects.all()
 
-    def get(self, request, reference_id, format=None):
-        try:
-            user = User.objects.first()
-            # user = request.user
-            photo_conversion = PhotoConversion.objects.get(
-                reference_id=reference_id, user=user)
-            serializer = PhotoConversionDetailSerializer(photo_conversion)
-            return MyResponse.success(data=serializer.data, status_code=status.HTTP_200_OK)
-
-        except PhotoConversion.DoesNotExist:
-            return MyResponse.failure(data=request.data, message='Conversion not found.', status_code=status.HTTP_404_NOT_FOUND)
-
-        except Exception as e:
-            print(f"Error during conversion detail fetch: {e}")
-            return MyResponse.failure(data=serializer.errors, message='Failed to fetch conversion details.', status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    def get_queryset(self):
+        return super().get_queryset().filter(user=User.objects.first())
 
     def delete(self, request, reference_id, format=None):
         try:
-            user=User.objects.first()
+            user = User.objects.first()
             # user = request.user
             photo_conversion = PhotoConversion.objects.get(
                 reference_id=reference_id, user=user)
@@ -97,9 +86,8 @@ class ConversionListView(ListAPIView):
     # authentication_classes = [TokenAuthentication]
     serializer_class = PhotoConversionDetailSerializer
 
-    
     def get_queryset(self, *args, **kwargs):
-        user=User.objects.first()
+        user = User.objects.first()
         # user = self.request.user
         try:
             return PhotoConversion.objects.filter(user=user)
