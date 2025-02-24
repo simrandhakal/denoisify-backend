@@ -29,54 +29,50 @@ DEF_PATH = Path(__file__).resolve().parent
 
 
 def model():
-    try:
-        # Define custom objects for loading
-        custom_objects = {
-            "InstanceNormalization": InstanceNormalization,
-            "SpectralNormalization": SpectralNormalization,
-            "residual_block": residual_block
-        }
-        model = load_model(os.path.join(DEF_PATH, 'models', 'model.keras'), custom_objects=custom_objects)
-        return model
-    except Exception as e:
-        print(f"Error loading model: {e}")
-        raise
+    # Define custom objects for loading
+    custom_objects = {
+        "InstanceNormalization": InstanceNormalization,
+        "SpectralNormalization": SpectralNormalization,
+        "residual_block": residual_block
+    }
+    model = load_model(os.path.join(DEF_PATH, 'models',
+                       'model.keras'), custom_objects=custom_objects)
+    return model
+
 
 def convert(input_image_url, output_image_path, resolution=None):
     # from skimage.metrics import structural_similarity as ssim
+    # Load and preprocess the noisy input image
+    img = cv2.imread(input_image_url)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img_resized = cv2.resize(img, (256, 256))
 
-    try:
-        # Load and preprocess the noisy input image
-        img = cv2.imread(input_image_url)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img_resized = cv2.resize(img, (256, 256))
+    # Load model and predict denoised image
+    denoise_array = np.array([img_resized], dtype=float) / 255.0
+    loaded_model = model()
+    denoised_output = loaded_model.predict(
+        denoise_array)[0]  # Shape: (256, 256, 3)
 
-        # Load model and predict denoised image
-        denoise_array = np.array([img_resized], dtype=float) / 255.0
-        loaded_model = model()
-        denoised_output = loaded_model.predict(denoise_array)[0]  # Shape: (256, 256, 3)
+    # Scale back to image range [0, 255]
+    denoised_image = (denoised_output * 255).astype(np.uint8)
 
-        # Scale back to image range [0, 255]
-        denoised_image = (denoised_output * 255).astype(np.uint8)
+    # # If ground truth (clean image) is available, calculate loss and accuracy
+    # clean_image_path = input_image_url.replace("gussian", "clear")  # Assuming clear image naming convention
+    # clean_image = cv2.imread(clean_image_path)
+    # clean_image = cv2.cvtColor(clean_image, cv2.COLOR_BGR2RGB)
+    # clean_image_resized = cv2.resize(clean_image, (256, 256))
 
-        # # If ground truth (clean image) is available, calculate loss and accuracy
-        # clean_image_path = input_image_url.replace("gussian", "clear")  # Assuming clear image naming convention
-        # clean_image = cv2.imread(clean_image_path)
-        # clean_image = cv2.cvtColor(clean_image, cv2.COLOR_BGR2RGB)
-        # clean_image_resized = cv2.resize(clean_image, (256, 256))
+    # # Calculate loss and accuracy
+    # mse_loss = calculate_mse_loss(clean_image_resized, denoised_image)
+    # ssim_loss = calculate_ssim_loss(clean_image_resized, denoised_image)
+    # accuracy = calculate_accuracy(clean_image_resized, denoised_image)
 
-        # # Calculate loss and accuracy
-        # mse_loss = calculate_mse_loss(clean_image_resized, denoised_image)
-        # ssim_loss = calculate_ssim_loss(clean_image_resized, denoised_image)
-        # accuracy = calculate_accuracy(clean_image_resized, denoised_image)
+    mse_loss, accuracy = 0, 0
+    # Save the denoised image
+    success = cv2.imwrite(output_image_path, cv2.cvtColor(
+        denoised_image, cv2.COLOR_RGB2BGR))
+    return success, mse_loss, accuracy
 
-        mse_loss, accuracy = 0,0
-        # Save the denoised image
-        success = cv2.imwrite(output_image_path, cv2.cvtColor(denoised_image, cv2.COLOR_RGB2BGR))
-        return success, mse_loss, accuracy
-    except Exception as e:
-        print(f"Error in convert function: {e}")
-        return False, None, None
 
 def initiate_conversion(photo_conversion):
     input_image_url = os.path.join(
