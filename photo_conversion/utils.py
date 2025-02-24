@@ -79,8 +79,9 @@ def initiate_conversion(photo_conversion):
         settings.MEDIA_ROOT, photo_conversion.input_image.name)  # .replace("/", "\\")
     output_image_path = os.path.join(
         settings.MEDIA_ROOT, 'output_images', photo_conversion.reference_id + '.jpg')  # .replace("/", "\\")
-    converted, loss, accuracy = convert(
-        input_image_url, output_image_path, photo_conversion.resolution)
+    converted, loss, accuracy = 0, 0, 0
+    # converted, loss, accuracy = convert(
+    #     input_image_url, output_image_path, photo_conversion.resolution)
     if converted:
         photo_conversion.status = 'completed'
         photo_conversion.output_image = "/output_images/" + \
