@@ -1,6 +1,6 @@
 venv/
 lenv/
-photo_conversion/models/
+# photo_conversion/models/
 # static/
 # docs/
 # media/

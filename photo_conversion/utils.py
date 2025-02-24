@@ -1,35 +1,42 @@
-# import cv2
-# import numpy as np
+import cv2
+import numpy as np
 # from skimage.color import rgb2lab, lab2rgb
 # from keras.models import model_from_json
 import os
 from django.conf import settings
 from pathlib import Path
+from tensorflow.keras.models import load_model
+from .aiutils import InstanceNormalization, SpectralNormalization, residual_block
 
 DEF_PATH = Path(__file__).resolve().parent
 
 # from skimage.metrics import structural_similarity as ssim
 
-def calculate_mse_loss(clean_image, denoised_image):
-    # MSE Loss
-    return np.mean((clean_image - denoised_image) ** 2)
+# def calculate_mse_loss(clean_image, denoised_image):
+#     # MSE Loss
+#     return np.mean((clean_image - denoised_image) ** 2)
 
-def calculate_ssim_loss(clean_image, denoised_image):
-    # SSIM Loss (higher SSIM = better quality, so we use 1 - SSIM as "loss")
-    return 1 - ssim(clean_image, denoised_image, multichannel=True)
+# def calculate_ssim_loss(clean_image, denoised_image):
+#     # SSIM Loss (higher SSIM = better quality, so we use 1 - SSIM as "loss")
+#     return 1 - ssim(clean_image, denoised_image, multichannel=True)
 
-def calculate_accuracy(clean_image, denoised_image, tolerance=5):
-    # Accuracy: Percentage of pixels with differences less than the tolerance
-    pixel_diff = np.abs(clean_image - denoised_image)
-    accurate_pixels = np.sum(pixel_diff < tolerance)
-    total_pixels = clean_image.size
-    return (accurate_pixels / total_pixels) * 100
+# def calculate_accuracy(clean_image, denoised_image, tolerance=5):
+#     # Accuracy: Percentage of pixels with differences less than the tolerance
+#     pixel_diff = np.abs(clean_image - denoised_image)
+#     accurate_pixels = np.sum(pixel_diff < tolerance)
+#     total_pixels = clean_image.size
+#     return (accurate_pixels / total_pixels) * 100
 
 
 def model():
-    # from tensorflow.keras.models import load_model
     try:
-        model = load_model(os.path.join(DEF_PATH, 'models', 'model.h5'))
+        # Define custom objects for loading
+        custom_objects = {
+            "InstanceNormalization": InstanceNormalization,
+            "SpectralNormalization": SpectralNormalization,
+            "residual_block": residual_block
+        }
+        model = load_model(os.path.join(DEF_PATH, 'models', 'model.keras'), custom_objects=custom_objects)
         return model
     except Exception as e:
         print(f"Error loading model: {e}")
