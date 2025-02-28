@@ -2,7 +2,22 @@ from tensorflow.keras.layers import Layer, Conv2D, LeakyReLU, Add
 from tensorflow.keras import backend as K
 import tensorflow as tf
 
+# Function to create a residual block in the Generator network
+
+@tf.keras.utils.register_keras_serializable()
 def residual_block(x, filters):
+    """
+    Implements a residual block with two convolutional layers, 
+    instance normalization, and a skip connection.
+    
+    Parameters:
+        x (tensor): Input tensor from the previous layer.
+        filters (int): Number of filters for the convolutional layers.
+    
+    Returns:
+        tensor: Output tensor after applying residual connections.
+    """
+
     res = Conv2D(filters, kernel_size=3, strides=1, padding="same")(x)
     res = InstanceNormalization()(res)
     res = LeakyReLU(alpha=0.2)(res)
@@ -12,6 +27,12 @@ def residual_block(x, filters):
 
     return Add()([x, res])  # Skip Connection
 
+
+
+
+
+
+# Custom Layer for Instance Normalization
 # Custom Layer for Instance Normalization
 @tf.keras.utils.register_keras_serializable()
 class InstanceNormalization(tf.keras.layers.Layer):
@@ -23,7 +44,7 @@ class InstanceNormalization(tf.keras.layers.Layer):
     in tasks like image generation where batch statistics can be unstable.
     """
 
-    def __init__(self, epsilon=1e-5, name=None, **kwargs):
+    def __init__(self, epsilon=1e-5, name=None, **kwargs):  # Accepts 'name' and '**kwargs'
         """
         Initializes the InstanceNormalization layer.
 
@@ -48,7 +69,8 @@ class InstanceNormalization(tf.keras.layers.Layer):
 
         # Normalize the input using computed mean & variance
         return (x - mean) / tf.sqrt(var + self.epsilon)
-    
+
+
     def get_config(self):
         """
         Returns the configuration of the layer for serialization.
@@ -63,7 +85,9 @@ class InstanceNormalization(tf.keras.layers.Layer):
         Recreates the layer from the saved configuration.
         """
         return cls(**config)
-    
+  
+
+
 
 @tf.keras.utils.register_keras_serializable()
 class SpectralNormalization(Layer):
@@ -85,19 +109,20 @@ class SpectralNormalization(Layer):
         super(SpectralNormalization, self).__init__(**kwargs)
         self.layer = layer
         self.power_iterations = power_iterations
-        
 
     def build(self, input_shape):
         """
         Builds the layer by initializing spectral normalization weights.
         """
         if not hasattr(self.layer, 'kernel'):
+            self.layer.build(input_shape)  # Manually build the layer before accessing kernel
+        
+        if not hasattr(self.layer, 'kernel'):
             raise ValueError("SpectralNormalization must be applied to layers with a `kernel` attribute.")
-
-        # Build the wrapped layer
-        self.layer.build(input_shape)
-        self.kernel = self.layer.kernel  # Get the original kernel (weights)
-
+        
+        # Get the original kernel (weights)
+        self.kernel = self.layer.kernel  
+    
         # Create 'u' for spectral normalization
         self.u = self.add_weight(
             shape=(1, self.kernel.shape[-1]),  # Shape: (1, output_channels)
@@ -106,6 +131,7 @@ class SpectralNormalization(Layer):
             name="sn_u"
         )
         super(SpectralNormalization, self).build(input_shape)
+
 
     def call(self, inputs, training=None):
         """
@@ -143,7 +169,8 @@ class SpectralNormalization(Layer):
         Returns the output shape of the layer.
         """
         return self.layer.compute_output_shape(input_shape)
-    
+        
+
     def get_config(self):
         """
         Returns the configuration of the layer for serialization.

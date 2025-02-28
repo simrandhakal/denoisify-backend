@@ -11,6 +11,20 @@ from django.core.files.images import get_image_dimensions
 from django.contrib.auth.models import User
 
 
+
+# from django.shortcuts import get_object_or_404
+# import torch
+# from realesrgan import RealESRGAN
+# from PIL import Image
+# from django.core.files.base import ContentFile
+# import io
+
+# # Load Model
+# model = RealESRGAN('cuda' if torch.cuda.is_available() else 'cpu')
+# model.load_weights()
+
+
+
 class ConversionInitiationView(APIView):
     # permission_classes = [IsAuthenticated]
     # authentication_classes = [TokenAuthentication]
@@ -29,26 +43,21 @@ class ConversionInitiationView(APIView):
         print(data)
         serializer = ConversionInitiationSerializer(data=data)
         if serializer.is_valid():
-            try:
-                photo_conversion = PhotoConversion.objects.create(
-                    user=user,
-                    name=serializer.validated_data['name'],
-                    input_image=serializer.validated_data['input_image'],
-                )
-                # get image resoulution from serializer.validated_data['input_image']
-                w, h = get_image_dimensions(
-                    serializer.validated_data['input_image'])
-                print(w, h)
+            photo_conversion = PhotoConversion.objects.create(
+                user=user,
+                name=serializer.validated_data['name'],
+                input_image=serializer.validated_data['input_image'],
+            )
+            # get image resoulution from serializer.validated_data['input_image']
+            w, h = get_image_dimensions(
+                serializer.validated_data['input_image'])
+            print(w, h)
 
-                photo_conversion.resolution = f"{w}x{h}"
-                photo_conversion.save()
-                initiate_conversion(photo_conversion)
-                serializer = PhotoConversionDetailSerializer(photo_conversion)
-                return MyResponse.success(data=serializer.data, message="Conversion initiated.", status_code=status.HTTP_200_OK)
-
-            except Exception as e:
-                print(f"Error during conversion initiation: {e}")
-                return MyResponse.failure(data=serializer.data, message='Failed to initiate conversion.', status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            photo_conversion.resolution = f"{w}x{h}"
+            photo_conversion.save()
+            initiate_conversion(photo_conversion)
+            serializer = PhotoConversionDetailSerializer(photo_conversion)
+            return MyResponse.success(data=serializer.data, message="Conversion initiated.", status_code=status.HTTP_200_OK)
 
         return MyResponse.failure(data=serializer.errors, message='Validation error', status_code=status.HTTP_400_BAD_REQUEST)
 
@@ -105,3 +114,51 @@ class ConversionCheckView(APIView):
         except PhotoConversion.DoesNotExist:
             return MyResponse.failure(message='Conversion not found.', status_code=status.HTTP_404_NOT_FOUND)
         return MyResponse.success(message='done')
+    
+
+
+
+
+
+# class EnhanceImageAPIView(APIView):
+#     """
+#     API View to enhance an image using a model.
+#     """
+
+#     def get(self, request, reference_id):
+#         """
+#         GET request to enhance an image and save it.
+#         """
+#         # Fetch the PhotoConversion object
+#         photo_conversion = get_object_or_404(PhotoConversion, reference_id=reference_id)
+
+#         if not photo_conversion.output_image:
+#             return MyResponse.failure(
+#                 data={'error': 'No output image found for this reference_id'}, 
+#                 status_code=status.HTTP_400_BAD_REQUEST
+#             )
+
+#         # Load the image
+#         image_path = photo_conversion.output_image.path
+#         image = Image.open(image_path).convert("RGB")
+
+#         # Enhance Image using the model
+#         enhanced_image = model.predict(image)
+
+#         # Convert enhanced image to bytes
+#         img_io = io.BytesIO()
+#         enhanced_image.save(img_io, format="PNG")
+#         img_io.seek(0)
+
+#         # Save the enhanced image to the PhotoConversion model
+#         photo_conversion.enhanced_image.save(
+#             f"enhanced_{photo_conversion.reference_id}.png", 
+#             ContentFile(img_io.getvalue()),
+#             save=True  # This ensures the model instance is saved
+#         )
+
+#         # Return response with the enhanced image URL
+#         return MyResponse.success(
+#             data={'enhanced_image_url': request.build_absolute_uri(photo_conversion.enhanced_image.url)},
+#             status_code=status.HTTP_200_OK
+#         )

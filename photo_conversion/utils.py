@@ -1,12 +1,10 @@
-import cv2
 import numpy as np
-# from skimage.color import rgb2lab, lab2rgb
-# from keras.models import model_from_json
 import os
 from django.conf import settings
 from pathlib import Path
 from tensorflow.keras.models import load_model
 from .aiutils import InstanceNormalization, SpectralNormalization, residual_block
+from tensorflow.keras.preprocessing.image import load_img, img_to_array, array_to_img
 
 DEF_PATH = Path(__file__).resolve().parent
 
@@ -40,62 +38,69 @@ def model():
     return model
 
 
+
 def convert(input_image_url, output_image_path, resolution=None):
+    """
+    Converts a noisy image to a denoised image using the trained GAN model.
+
+    Parameters:
+    - input_image_url (str): Path to the noisy input image.
+    - output_image_path (str): Path where the denoised image will be saved.
+    - model_path (str): Path to the trained model file.
+    - resolution (str, optional): Target resolution for the output image (e.g., "512x512").
+    
+    Returns:
+    - success (bool): True if image is saved successfully, False otherwise.
+    - mse_loss (float): Placeholder for MSE loss computation (not implemented yet).
+    - accuracy (float): Placeholder for accuracy computation (not implemented yet).
+    """
 
     try:
-        
-        # Load and preprocess the noisy input image
-        img = cv2.imread(input_image_url)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img_resized = cv2.resize(img, (256, 256))
+        # Load and preprocess the noisy input image (same as training)
+        img = img_to_array(load_img(input_image_url, target_size=(256, 256))) / 255.0  # Normalize to [0,1]
+        img = np.expand_dims(img, axis=0)  # Add batch dimension
 
-        # Load model and predict denoised image
-        denoise_array = np.array([img_resized], dtype=float) / 255.0
+        # Load model
         loaded_model = model()
-        denoised_output = loaded_model.predict(denoise_array)[0]  # Shape: (256, 256, 3)
 
-        # Scale back to image range [0, 255]
-        denoised_image = (denoised_output * 255).astype(np.uint8)
+        # Predict denoised image
+        denoised_output = loaded_model.predict(img)[0]  # Shape: (256, 256, 3)
 
-        # Resize denoised image to original size
-        try:
-            w, h = map(int, resolution.split('x'))
-            denoised_image = cv2.resize(denoised_image, (w, h))
-        except Exception as e:
-            print(f"Error resizing image: {e}")
-            denoised_image = cv2.resize(denoised_image, (256, 256))
+        # Convert back to PIL image format
+        denoised_image = array_to_img(denoised_output)
 
-        # # If ground truth (clean image) is available, calculate loss and accuracy
-        # clean_image_path = input_image_url.replace("gussian", "clear")  # Assuming clear image naming convention
-        # clean_image = cv2.imread(clean_image_path)
-        # clean_image = cv2.cvtColor(clean_image, cv2.COLOR_BGR2RGB)
-        # clean_image_resized = cv2.resize(clean_image, (256, 256))
+        # Resize to original or specified resolution
+        if resolution:
+            try:
+                w, h = map(int, resolution.split('x'))
+                denoised_image = denoised_image.resize((w, h))
+            except Exception as e:
+                print(f"Error resizing image: {e}")
 
-        # # Calculate loss and accuracy
-        # mse_loss = calculate_mse_loss(clean_image_resized, denoised_image)
-        # ssim_loss = calculate_ssim_loss(clean_image_resized, denoised_image)
-        # accuracy = calculate_accuracy(clean_image_resized, denoised_image)
+        # Save the denoised image using PIL
+        denoised_image.save(output_image_path)
+        print(f"Saved: {output_image_path}")
 
-        mse_loss, accuracy = 0,0
-        # Save the denoised image
-        success = cv2.imwrite(output_image_path, cv2.cvtColor(denoised_image, cv2.COLOR_RGB2BGR))
-        return success, mse_loss, accuracy
+        mse_loss, accuracy = 0, 0  # Placeholder values
+        return True, mse_loss, accuracy
+
     except Exception as e:
-        print(f"Error in convert function: {e}")
-        return False, None, None
+        print(f"Error processing image: {e}")
+        return False, 0, 0  # Return failure
+
 
 def initiate_conversion(photo_conversion):
     input_image_url = os.path.join(
         settings.MEDIA_ROOT, photo_conversion.input_image.name)  # .replace("/", "\\")
+    file_extension = photo_conversion.input_image.name.split('.')[-1]
+    file_name = f'{photo_conversion.reference_id}.{file_extension}'
     output_image_path = os.path.join(
-        settings.MEDIA_ROOT, 'output_images', photo_conversion.reference_id + '.jpg')  # .replace("/", "\\")
-    converted, loss, accuracy = 0, 0, 0
-    # converted, loss, accuracy = convert(
-    #     input_image_url, output_image_path, photo_conversion.resolution)
+        settings.MEDIA_ROOT, 'output_images', file_name)  # .replace("/", "\\")
+    converted, loss, accuracy = convert(
+        input_image_url, output_image_path, photo_conversion.resolution)
     if converted:
         photo_conversion.status = 'completed'
-        photo_conversion.output_image = "/output_images/" + \
-            photo_conversion.reference_id + ".jpg"
+        photo_conversion.output_image = "/output_images/" + file_name
         photo_conversion.accuracy = accuracy
         photo_conversion.loss = loss
         photo_conversion.save()

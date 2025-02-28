@@ -23,6 +23,7 @@ class PhotoConversion(models.Model):
     input_image = models.ImageField(upload_to='input_images/')
     output_image = models.ImageField(
         upload_to='output_images/', blank=True, null=True)
+    enhanced_image = models.ImageField(upload_to="enhanced_images/", null=True, blank=True)
     reference_id = models.CharField(max_length=10, unique=True, blank=True)
     status = models.CharField(
         max_length=10, choices=CONVERSION_STATUS_CHOICES, default='pending')

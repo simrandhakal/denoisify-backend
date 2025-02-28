@@ -9,4 +9,6 @@ urlpatterns = [
     path('<str:reference_id>/', ConversionDetailView.as_view(),
          name='conversion-detail'),
     path('', ConversionListView.as_view(), name='conversion-list'),
+#     path('enhance/<str:reference_id>/', enhance_image, name='enhance-image'),
+
 ]
