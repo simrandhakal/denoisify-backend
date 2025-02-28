@@ -29,21 +29,18 @@ DEF_PATH = Path(__file__).resolve().parent
 
 
 def model():
-    try:
-        # Define custom objects for loading
-        custom_objects = {
-            "InstanceNormalization": InstanceNormalization,
-            "SpectralNormalization": SpectralNormalization,
-            "residual_block": residual_block
-        }
-        model = load_model(os.path.join(DEF_PATH, 'models', 'model.keras'), custom_objects=custom_objects)
-        return model
-    except Exception as e:
-        print(f"Error loading model: {e}")
-        raise
+    # Define custom objects for loading
+    custom_objects = {
+        "InstanceNormalization": InstanceNormalization,
+        "SpectralNormalization": SpectralNormalization,
+        "residual_block": residual_block
+    }
+    model = load_model(os.path.join(DEF_PATH, 'models',
+                       'model.keras'), custom_objects=custom_objects)
+    return model
+
 
 def convert(input_image_url, output_image_path, resolution=None):
-    # from skimage.metrics import structural_similarity as ssim
 
     try:
         
@@ -92,8 +89,9 @@ def initiate_conversion(photo_conversion):
         settings.MEDIA_ROOT, photo_conversion.input_image.name)  # .replace("/", "\\")
     output_image_path = os.path.join(
         settings.MEDIA_ROOT, 'output_images', photo_conversion.reference_id + '.jpg')  # .replace("/", "\\")
-    converted, loss, accuracy = convert(
-        input_image_url, output_image_path, photo_conversion.resolution)
+    converted, loss, accuracy = 0, 0, 0
+    # converted, loss, accuracy = convert(
+    #     input_image_url, output_image_path, photo_conversion.resolution)
     if converted:
         photo_conversion.status = 'completed'
         photo_conversion.output_image = "/output_images/" + \
