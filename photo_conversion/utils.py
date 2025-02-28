@@ -46,6 +46,7 @@ def convert(input_image_url, output_image_path, resolution=None):
     # from skimage.metrics import structural_similarity as ssim
 
     try:
+        
         # Load and preprocess the noisy input image
         img = cv2.imread(input_image_url)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -58,6 +59,14 @@ def convert(input_image_url, output_image_path, resolution=None):
 
         # Scale back to image range [0, 255]
         denoised_image = (denoised_output * 255).astype(np.uint8)
+
+        # Resize denoised image to original size
+        try:
+            w, h = map(int, resolution.split('x'))
+            denoised_image = cv2.resize(denoised_image, (w, h))
+        except Exception as e:
+            print(f"Error resizing image: {e}")
+            denoised_image = cv2.resize(denoised_image, (256, 256))
 
         # # If ground truth (clean image) is available, calculate loss and accuracy
         # clean_image_path = input_image_url.replace("gussian", "clear")  # Assuming clear image naming convention
